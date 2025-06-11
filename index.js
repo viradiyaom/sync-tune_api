@@ -104,6 +104,14 @@ io.on("connection", (socket) => {
   });
 
   socket.on("create-room", (roomId) => {
+    // if (rooms[roomId].ownerId) {
+    //   logger(`🚨 Host already active for ${roomId}`);
+    //   socket.emit("join-room-response", {
+    //     type: "ERROR",
+    //     message: "Host already active for this room",
+    //   });
+    //   return;
+    // }
     socket.join(roomId);
 
     if (!rooms[roomId]) {
@@ -151,11 +159,30 @@ io.on("connection", (socket) => {
   });
 
   socket.on("update-current-playing", ({ roomId, index }) => {
-    if (!rooms[roomId]) return;
+    if (!rooms[roomId]) {
+      logger(`🚨 Room not found ${roomId}`);
+      return;
+    }
 
     rooms[roomId].currentPlaying = index;
     saveRoomState(roomId);
     io.to(roomId).emit("current-playing-change", { index });
+  });
+
+  socket.on("sync-request-with-host", ({ roomId }) => {
+    if (!rooms[roomId]) {
+      logger(`🚨 Room not found ${roomId}`);
+      return;
+    }
+    io.to(rooms[roomId].ownerId).emit("sync-request-for-host", { roomId });
+  });
+
+  socket.on("sync-response-from-host", ({ roomId, ...rest }) => {
+    if (!rooms[roomId]) {
+      logger(`🚨 Room not found ${roomId}`);
+      return;
+    }
+    io.to(roomId).emit("sync-response-from-host", { roomId, ...rest });
   });
 
   socket.on("disconnect", () => {
