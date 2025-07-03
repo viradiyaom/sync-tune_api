@@ -3,6 +3,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const fs = require("fs");
 const path = require("path");
+const cors = require("cors");
 
 require("dotenv").config();
 
@@ -15,6 +16,8 @@ const io = new Server(server, {
     methods: ["GET", "POST"],
   },
 });
+
+app.use(cors());
 
 const rooms = {};
 const owners = {};
@@ -270,6 +273,8 @@ io.on("connection", (socket) => {
     }
   });
 });
+
+app.get("/ping", (_, res) => res.status(200).send("pong"));
 
 server.listen(PORT, () => {
   logger(`🚀 Socket server running on http://localhost:${PORT}`);
